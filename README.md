@@ -1,6 +1,6 @@
 # THE HYBRID — Gym Command Centre
 
-A responsive workout dashboard for the Monday–Friday Bear × Mentzer × Arnold programme. Log sets and cardio, see exercise progress, and keep a daily recovery journal.
+A responsive workout dashboard for the Bear × Mentzer × Arnold programme, with a Tuesday–Monday training cycle and weekend recovery. Log sets and cardio, see exercise progress, and keep a daily recovery journal.
 
 **[Open the live dashboard](https://harshmakhijaofficial-rgb.github.io/the-hybrid-workout-tracker/)**
 
@@ -78,16 +78,18 @@ Sync pushes local changes and pulls manual Sheet edits. Keep the tab headers and
 
 ## Programme and logging conventions
 
-| Day | Focus | Cardio target |
-| --- | --- | --- |
-| Monday | Chest + Back A | 15 minutes |
-| Tuesday | Legs A + Core | Optional easy 10 minutes |
-| Wednesday | Shoulders + Arms | 25 minutes |
-| Thursday | Chest + Back B | 20 minutes |
-| Friday | Legs B + Core | Optional easy 10 minutes |
-| Weekend | Recovery and journal | As needed |
+| Day | First cycle | Focus | Cardio target |
+| --- | --- | --- | --- |
+| Tuesday | 20 October 2026 | Chest + Back A | 15 minutes |
+| Wednesday | 21 October 2026 | Legs A + Core | 10 minutes easy |
+| Thursday | 22 October 2026 | Shoulders + Arms | 25 minutes |
+| Friday | 23 October 2026 | Chest + Back B | 20 minutes |
+| Monday | 26 October 2026 | Legs B + Core | 10 minutes easy |
+| Saturday & Sunday | 24–25 October 2026 | Rest and recovery | — |
 
-The four-week programme starts on the date in `plan.json`. Dates after the programme show Week 4. Change the start date for a new cycle. Use full planned sets only when recovery permits. Track reps in reserve; reduce sets when needed.
+The four-week programme starts on Tuesday, 20 October 2026, using the date in `plan.json`. Each training week runs Tuesday–Monday: Week 1 ends on Monday, 26 October, and Week 2 begins on Tuesday, 27 October. The same weekday split repeats each week. Saturday and Sunday show recovery with the next workout on Monday. Dates after the programme show Week 4. Change the start date for a new cycle. Use full planned sets only when recovery permits. Track reps in reserve; reduce sets when needed.
+
+Exercise IDs are stable when the schedule changes, so existing saved sets, progress history and JSON backups continue to work.
 
 For planks, enter seconds in Reps and 0 kg. For split squats, enter reps per leg. Bodyweight movements can use 0 kg. Volume is the raw sum of kg × reps.
 

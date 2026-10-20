@@ -1,7 +1,7 @@
 {
   "name": "THE HYBRID",
   "subheading": "BEAR × HEAVY DUTY × GOLDEN ERA",
-  "description": "Four weeks of progressive hypertrophy, controlled strength and StairMaster conditioning.",
+  "description": "Four weeks of progressive hypertrophy, controlled strength and StairMaster conditioning, on a Tuesday–Monday training cycle.",
   "start_date": "2026-10-20",
   "weeks": [
     {
@@ -27,8 +27,8 @@
   ],
   "days": [
     {
-      "day": "Monday",
-      "short": "MON",
+      "day": "Tuesday",
+      "short": "TUE",
       "focus": "Chest + Back A",
       "tag": "THE BEAR · STRENGTH",
       "cardio_target": 15,
@@ -91,12 +91,12 @@
       ]
     },
     {
-      "day": "Tuesday",
-      "short": "TUE",
+      "day": "Wednesday",
+      "short": "WED",
       "focus": "Legs A + Core",
       "tag": "THE BEAR · LOWER BODY",
       "cardio_target": 10,
-      "cardio_intensity": "Easy / optional",
+      "cardio_intensity": "Easy",
       "exercises": [
         {
           "id": "tue_legpress",
@@ -155,8 +155,8 @@
       ]
     },
     {
-      "day": "Wednesday",
-      "short": "WED",
+      "day": "Thursday",
+      "short": "THU",
       "focus": "Shoulders + Arms",
       "tag": "ARNOLD × MENTZER",
       "cardio_target": 25,
@@ -228,8 +228,8 @@
       ]
     },
     {
-      "day": "Thursday",
-      "short": "THU",
+      "day": "Friday",
+      "short": "FRI",
       "focus": "Chest + Back B",
       "tag": "GOLDEN ERA · VOLUME",
       "cardio_target": 20,
@@ -292,12 +292,12 @@
       ]
     },
     {
-      "day": "Friday",
-      "short": "FRI",
+      "day": "Monday",
+      "short": "MON",
       "focus": "Legs B + Core",
       "tag": "HYPERTROPHY · STABILITY",
       "cardio_target": 10,
-      "cardio_intensity": "Easy / optional",
+      "cardio_intensity": "Easy",
       "exercises": [
         {
           "id": "fri_goblet",
@@ -355,5 +355,9 @@
         }
       ]
     }
+  ],
+  "rest_days": [
+    "Saturday",
+    "Sunday"
   ]
 }

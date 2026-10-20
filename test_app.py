@@ -202,6 +202,25 @@ class TrackerTests(unittest.TestCase):
         self.assertTrue(self.sheets.values_by_tab['Daily Notes'][1][0].startswith('sheetnote__'))
         self.assertEqual(self.records()['notes'][0]['note'], 'Added in Sheets')
 
+    def test_schedule_shift_preserves_historical_set_identity(self):
+        # Exercise IDs retain their original weekday prefixes after the programme
+        # moves to Tue–Mon. Historical day labels must remain importable.
+        historical = {**self.first, 'id': '2026-10-20__mon_chest_press__1',
+                      'day': 'Monday', 'exercise_id': 'mon_chest_press',
+                      'exercise': 'Machine Chest Press'}
+        self.server.import_backup({'version': 1, 'records': {'sets': [historical]}})
+        self.server.sync()
+        self.server.save('sets', {**historical, 'day': 'Tuesday', 'weight_kg': '20'})
+        result = self.server.sync()
+        self.assertEqual(result['pushed'], 1)
+        self.assertEqual(result['conflicts'], 0)
+        records = self.records()['sets']
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]['id'], historical['id'])
+        self.assertEqual(records[0]['day'], 'Tuesday')
+        self.assertEqual(records[0]['weight_kg'], '20')
+        self.assertEqual(len(self.sheets.values_by_tab['Workout Logs']), 2)
+
     def test_remote_bad_headers_fail_before_any_tab_is_changed(self):
         self.server.save('sets', self.first)  # First tab would otherwise be written.
         headers = self.sheets.values_by_tab['Check-ins'][0]
@@ -259,7 +278,7 @@ class TrackerTests(unittest.TestCase):
                 return response.status, response.read()
 
         try:
-            for path in ['/', '/app.js', '/style.css', '/runtime-config.js', '/storage.js']:
+            for path in ['/', '/app.js', '/style.css', '/runtime-config.js', '/storage.js', '/schedule.js']:
                 status, payload = request(path)
                 self.assertEqual(status, 200)
                 self.assertTrue(payload)

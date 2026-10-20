@@ -393,7 +393,7 @@ class Handler(BaseHTTPRequestHandler):
                 data=json.dumps({'version':1,'exported_at':utc(),'records':state()['records']},ensure_ascii=False,indent=2).encode('utf-8')
                 self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Content-Disposition','attachment; filename="hybrid-workout-backup.json"');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
             files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js',
-                   '/runtime-config.js':'runtime-config.js','/storage.js':'storage.js'}
+                   '/runtime-config.js':'runtime-config.js','/storage.js':'storage.js','/schedule.js':'schedule.js'}
             if path not in files:return self.json({'error':'Not found'},404)
             fp=ROOT/'public'/files[path]
             payload=fp.read_bytes()
