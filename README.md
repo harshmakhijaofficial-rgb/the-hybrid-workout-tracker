@@ -2,7 +2,9 @@
 
 A responsive workout dashboard for the Bear × Mentzer × Arnold programme, with a Tuesday–Monday training cycle and weekend recovery. Log sets and cardio, see exercise progress, and keep a daily recovery journal.
 
-The Google Sheets edition runs as a private Apps Script web app and saves directly to the linked workout workbook. It uses Google sign-in and needs no JSON file transfers. The public dashboard links to that private edition once its deployment URL is configured.
+The Google Sheets edition runs as a private Apps Script web app and saves directly to the linked workout workbook. It uses Google sign-in and needs no JSON file transfers.
+
+**[Open the connected Google Sheets dashboard](https://script.google.com/macros/s/AKfycbwoN4h_vKgSakOoKM4dlFNF_rhZi-D_XGD405OIczFn9rua59I3v24F2LNu8qQhwqPX/exec)** — sign in as the workbook owner.
 
 **[Open the live dashboard](https://harshmakhijaofficial-rgb.github.io/the-hybrid-workout-tracker/)**
 
