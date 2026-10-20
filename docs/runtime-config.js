@@ -1,1 +1,2 @@
 window.HYBRID_STORAGE_MODE = 'browser';
+window.HYBRID_SHEETS_DASHBOARD_URL = "";

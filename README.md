@@ -2,6 +2,8 @@
 
 A responsive workout dashboard for the Bear × Mentzer × Arnold programme, with a Tuesday–Monday training cycle and weekend recovery. Log sets and cardio, see exercise progress, and keep a daily recovery journal.
 
+The Google Sheets edition runs as a private Apps Script web app and saves directly to the linked workout workbook. It uses Google sign-in and needs no JSON file transfers. The public dashboard links to that private edition once its deployment URL is configured.
+
 **[Open the live dashboard](https://harshmakhijaofficial-rgb.github.io/the-hybrid-workout-tracker/)**
 
 ## Use the hosted dashboard
@@ -16,7 +18,23 @@ Open the link above in a modern browser. No installation or account is required.
 
 **Hosted workout entries are saved only in this browser on this device.** They are not uploaded to GitHub or shared with other visitors. They do not automatically sync across devices. Clearing website data or using a private browsing session can remove them. Export a JSON backup regularly; restore it on another device to move your records. A restore merges records, updating matching IDs, and validates the whole backup before changing anything.
 
-The hosted dashboard uses browser storage. Google Sheets synchronisation is available in the Python edition below, after you configure your own workbook and OAuth credentials. Both editions use the same JSON backup format.
+The public GitHub Pages edition uses browser storage. For automatic workbook saves, use the private connected edition below. Google Sheets synchronisation is also available in the Python edition after local OAuth setup.
+
+## Connected Google Sheets dashboard
+
+The connected edition uses the same interface and training schedule. It reads sets, cardio, notes and check-ins from the existing Google Sheets tabs; each successful Save updates that record immediately. **Refresh Sheets** pulls changes made directly in the workbook. A failed save shows an error and keeps the entered values available to retry.
+
+The Apps Script deployment is **Only myself**, executing as the deploying Google account. Sign in with the workbook owner's account. Google requires a one-time Sheets permission approval; the server code fixes access to the configured workbook. Neither OAuth tokens nor credentials appear in the public repository. The public GitHub Pages dashboard remains available with browser-local storage and a link to the connected dashboard.
+
+Apps Script source is in `apps-script/`. `connection.json` records the observed project ID, workbook ID and deployed dashboard URL. To generate the files for the Apps Script editor:
+
+```sh
+npm run build:sheets
+```
+
+This writes ignored `apps-script/build/Code.gs`, `Index.html` and `appsscript.json`. Copy each complete file into its matching Apps Script editor file. The build embeds the current programme and UI, so rerun it after source changes. Save and update the private web app deployment to publish those changes. The manifest explicitly declares owner-only access and the Google Sheets scope. Keep that access setting private.
+
+Existing workbook headers are validated before writes. Saving updates one record's schema columns; other rows, extra columns, formatting and reference tabs remain intact. IDs must remain stable; manual rows need a unique ID and the original headers. There is a 4,999-record limit per data tab. The connected edition uses Sheets as its source of truth and requires an internet connection; manual workbook changes appear after refresh. Simultaneous edits to the same record use the last completed save.
 
 ## Run the Python edition
 
@@ -51,7 +69,7 @@ GitHub Pages publishes `main` → `/docs`. After editing `public/` or `plan.json
 
 ## Optional Google Sheets sync (Python edition)
 
-1. Set `spreadsheet_id` in `config.json` to your own Google Sheets workbook ID. The public repository intentionally includes no personal workbook or credentials.
+1. `config.json` points to the linked workout workbook. To use another workbook, change `spreadsheet_id`. The repository contains no credentials or workout records.
 2. Create these tabs with the following exact header rows in row 1:
 
 | Tab | Headers, in order |
@@ -112,4 +130,5 @@ Browser storage tests cover persistence, validation, backups and failed writes. 
 - `connect_google.py` — optional local Google OAuth setup.
 - `plan.json` — workout programme.
 - `scripts/` — dependency-free build and preview commands.
+- `apps-script/` — private connected dashboard backend, deployment manifest and connection metadata.
 - `tests/`, `test_app.py` — browser storage and Python checks.
