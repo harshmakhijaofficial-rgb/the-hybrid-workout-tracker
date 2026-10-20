@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0c1110">
+  <meta name="description" content="THE HYBRID — your private five-day workout tracker, training dashboard and daily journal.">
+  <title>THE HYBRID — Gym Command Centre</title>
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./runtime-config.js"></script>
+  <script defer src="./storage.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <a class="brand" href="#dashboard" data-nav="dashboard" aria-label="Hybrid home">
+        <span class="brand-mark"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true"><path d="M4 21V5h5v6h8V5h5v16h-5v-6H9v6H4Z" fill="currentColor"/></svg></span>
+        <span><strong>THE HYBRID</strong><small>BUILD THE WORK</small></span>
+      </a>
+      <div class="side-label">COMMAND CENTRE</div>
+      <nav class="menu" id="side-nav">
+        <button class="nav-item active" data-nav="dashboard"><span class="nav-icon">◫</span><span>Overview</span></button>
+        <button class="nav-item" data-nav="train"><span class="nav-icon">✚</span><span>Training log</span></button>
+        <button class="nav-item" data-nav="progress"><span class="nav-icon">↗</span><span>Progress</span></button>
+        <button class="nav-item" data-nav="journal"><span class="nav-icon">▤</span><span>Daily journal</span></button>
+        <button class="nav-item" data-nav="settings"><span class="nav-icon">⚙</span><span data-settings-label>Google sync</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="small-statement">CONSISTENCY <span>OVER</span> CHAOS.</div>
+        <div class="sidebar-note">Bear × Mentzer × Arnold<br>4 weeks. 5 days. Track everything.</div>
+        <div class="local-pill"><span class="green-dot"></span> LOCAL-FIRST TRACKER</div>
+      </div>
+    </aside>
+    <div class="mobile-brand"><span class="brand-mark">H</span><strong>THE HYBRID</strong><span id="mobile-sync" class="mobile-sync-indicator"></span></div>
+    <main class="main">
+      <header class="topbar">
+        <div><div class="top-kicker">GYM / PERFORMANCE SYSTEM</div><div class="today" id="header-date">Your training system</div></div>
+        <div class="top-actions"><div class="sync-state" id="sync-state"><span class="pulse"></span> Local data</div><button class="btn btn-outline btn-sm" data-action="sync">↻ <span>Sync Sheets</span></button></div>
+      </header>
+      <div id="view" class="view" aria-live="polite"><div class="loading">Loading your training command centre…</div></div>
+      <footer class="footer">THE HYBRID <span>•</span> Lift deliberately. Recover deliberately. Repeat.</footer>
+    </main>
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+      <button data-nav="dashboard"><span>◫</span>Home</button><button data-nav="train"><span>✚</span>Train</button><button data-nav="progress"><span>↗</span>Progress</button><button data-nav="journal"><span>▤</span>Journal</button><button data-nav="settings"><span>⚙</span><small data-settings-label style="font-size:inherit">Sync</small></button>
+    </nav>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+</body>
+</html>
