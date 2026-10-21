@@ -23,13 +23,32 @@ const checkinRecord = patch => ({ id: 'checkin__2026-10-20', date: '2026-10-20',
 function createServer() {
   const events = [], mutations = [], opened = [], sheets = new Map();
   const state = { held: false, failWait: false, failWrite: false, failFlush: false, releases: 0 };
+  const filled = value => value !== '' && value !== undefined && value !== null;
   class Sheet {
-    constructor(name, headers) { this.name = name; this.cells = [headers.slice()]; this.maxRows = 1000; }
+    constructor(name, headers) { this.name = name; this.cells = [headers.slice()]; this.maxRows = 1000; this.maxColumns = 26; this.charts = []; this.formats = []; }
     getLastRow() {
-      for (let row = this.cells.length - 1; row >= 0; row--) if (this.cells[row]?.some(value => value !== '' && value !== undefined && value !== null)) return row + 1;
+      for (let row = this.cells.length - 1; row >= 0; row--) if (this.cells[row]?.some(filled)) return row + 1;
       return 0;
     }
+    getLastColumn() { return Math.max(0, ...this.cells.map(row => (row || []).reduce((last, value, index) => filled(value) ? index + 1 : last, 0))); }
     getMaxRows() { return this.maxRows; }
+    getMaxColumns() { return this.maxColumns; }
+    insertColumnAfter(column) { assert.equal(state.held, true); assert.equal(column, this.maxColumns); this.maxColumns++; mutations.push({ type: 'insert-column', tab: this.name }); }
+    deleteColumn(column) { assert.equal(state.held, true); this.cells.forEach(row => row?.splice(column - 1, 1)); this.maxColumns--; mutations.push({ type: 'delete-column', tab: this.name }); }
+    getCharts() { return this.charts.slice(); }
+    insertChart(chart) { assert.equal(state.held, true); this.charts.push(chart); mutations.push({ type: 'chart', tab: this.name }); }
+    newChart() {
+      const chart = { type: '', ranges: [], options: {}, headers: 0, position: null };
+      const builder = {
+        asLineChart() { chart.type = 'line'; return builder; },
+        addRange(range) { chart.ranges.push(range.a1); return builder; },
+        setNumHeaders(count) { chart.headers = count; return builder; },
+        setPosition(...args) { chart.position = args; return builder; },
+        setOption(key, value) { chart.options[key] = value; return builder; },
+        build() { return chart; }
+      };
+      return builder;
+    }
     insertRowsAfter(after, count) {
       assert.equal(state.held, true);
       assert.equal(after, this.maxRows);
@@ -40,6 +59,22 @@ function createServer() {
       assert.ok(row > 0 && column > 0 && rowCount > 0 && columnCount > 0);
       const sheet = this;
       return {
+        a1: [row, column, rowCount, columnCount],
+        setNumberFormat(format) { assert.equal(state.held, true); sheet.formats.push([row, column, rowCount, columnCount, format]); return this; },
+        sort(spec) {
+          // Like Range.sort: reorders only this block's cells, by one column, blanks last.
+          assert.equal(state.held, true);
+          events.push('sort');
+          mutations.push({ type: 'sort', tab: sheet.name, row, rowCount });
+          const block = Array.from({ length: rowCount }, (_, r) => Array.from({ length: columnCount }, (_, c) => sheet.cells[row + r - 1]?.[column + c - 1] ?? ''));
+          const key = spec.column - column;
+          block.sort((a, b) => !filled(a[key]) - !filled(b[key]) || (a[key] < b[key] ? -1 : a[key] > b[key] ? 1 : 0) * (spec.ascending === false ? -1 : 1));
+          block.forEach((values, r) => values.forEach((value, c) => {
+            if (!sheet.cells[row + r - 1]) sheet.cells[row + r - 1] = [];
+            sheet.cells[row + r - 1][column + c - 1] = value;
+          }));
+          return this;
+        },
         getValues() {
           return Array.from({ length: rowCount }, (_, r) => Array.from({ length: columnCount }, (_, c) => {
             const value = sheet.cells[row + r - 1]?.[column + c - 1] ?? '';
@@ -90,7 +125,13 @@ function createServer() {
       releaseLock() { assert.equal(state.held, true); state.held = false; state.releases++; events.push('release'); }
     }; } },
     SpreadsheetApp: {
-      openById(id) { assert.equal(state.held, true); opened.push(id); return { getSpreadsheetTimeZone: () => 'Europe/London', getSheetByName: name => sheets.get(name) ?? null }; },
+      openById(id) {
+        assert.equal(state.held, true); opened.push(id);
+        return {
+          getSpreadsheetTimeZone: () => 'Europe/London', getSheetByName: name => sheets.get(name) ?? null,
+          insertSheet(name) { assert.equal(state.held, true); assert.ok(!sheets.has(name)); const sheet = new Sheet(name, []); sheets.set(name, sheet); mutations.push({ type: 'insert-sheet', tab: name }); return sheet; }
+        };
+      },
       flush() { assert.equal(state.held, true); events.push('flush'); if (state.failFlush) throw Error('Simulated flush failure'); }
     },
     Utilities: { formatDate(date, timezone, format) {
@@ -101,7 +142,7 @@ function createServer() {
   });
   vm.runInContext(source, context, { filename: 'apps-script/Code.gs' });
   return {
-    request: context.hybridRequest, doGet: context.doGet, sheets, state, events, mutations, opened, html,
+    request: context.hybridRequest, doGet: context.doGet, sheets, state, events, mutations, opened, html, Sheet,
     add(kind, record, extra) {
       const sheet = sheets.get(tabs[kind]);
       const row = fields[kind].map(field => record[field] ?? '');
@@ -302,4 +343,76 @@ test('refresh and export read current Sheet data without rewriting it and reject
   assert.equal(server.mutations.length, 0);
   assert.throws(() => server.request({ path: '/api/import', method: 'POST', body: '{}' }), /not supported/i);
   assert.throws(() => server.request({ path: '/api/records/notes', method: 'POST', body: '{invalid' }), /JSON/i);
+});
+
+test('a save that lands out of date order sorts its tab; whole rows move and same-day rows keep their order', () => {
+  const server = createServer();
+  const sheet = server.sheets.get(tabs.sets);
+  server.add('sets', setRecord({ id: 'b__20' }), 'extra for b');
+  server.add('sets', setRecord({ id: 'a__22', date: '2026-10-22', day: 'Thursday' }), 'extra for a');
+  save(server, 'sets', setRecord({ id: 'z__23', date: '2026-10-23', day: 'Friday' }));
+  assert.equal(server.mutations.some(mutation => mutation.type === 'sort'), false, 'an in-order save does not sort');
+  save(server, 'sets', setRecord({ id: 'c__20' }));
+  assert.deepEqual(server.records().sets.map(row => row.id), ['b__20', 'c__20', 'a__22', 'z__23']);
+  assert.equal(sheet.cells[1][fields.sets.length], 'extra for b');
+  assert.equal(sheet.cells[3][fields.sets.length], 'extra for a');
+  assert.equal(sheet.getLastColumn(), fields.sets.length + 1, 'the temporary sort column is cleared');
+  assert.equal(server.state.held, false);
+});
+
+test('check-in saves refresh an existing Weight Trend tab with the 7-day average', () => {
+  const server = createServer();
+  save(server, 'checkins', checkinRecord({ bodyweight_kg: '80' }));
+  assert.equal(server.sheets.has('Weight Trend'), false, 'saves never create the tab');
+  server.request({ path: '/api/organise', method: 'POST' });
+  const trend = server.sheets.get('Weight Trend');
+  for (const [date, day, kg] of [['2026-10-21', 'Wednesday', '80.4'], ['2026-10-23', 'Friday', '79.8'], ['2026-10-24', 'Saturday', ''], ['2026-10-28', 'Wednesday', '79']]) {
+    save(server, 'checkins', checkinRecord({ id: `checkin__${date}`, date, day, bodyweight_kg: kg }));
+  }
+  // The 24 Oct check-in has no weight, so it is left out; 28 Oct averages 23 Oct (79.8) and 28 Oct (79.0).
+  assert.deepEqual(trend.cells.slice(0, 5), [
+    ['Date', 'Daily weigh-in (kg)', '7-day average (kg)'],
+    ['2026-10-20', 80, 80], ['2026-10-21', 80.4, 80.2], ['2026-10-23', 79.8, 80.07], ['2026-10-28', 79, 79.4]
+  ]);
+  assert.equal(trend.getLastRow(), 5);
+  save(server, 'checkins', checkinRecord({ id: 'checkin__2026-10-28', date: '2026-10-28', day: 'Wednesday', bodyweight_kg: '78.6' }));
+  assert.deepEqual(trend.cells[4], ['2026-10-28', 78.6, 79.2]);
+  assert.equal(trend.getLastRow(), 5);
+});
+
+test('organising orders PLAN and START HERE Monday first, sorts logs and adds one Weight Trend chart', () => {
+  const server = createServer();
+  const planTab = new server.Sheet('PLAN', ['day', 'focus', 'exercise_id', 'exercise']);
+  [['Tuesday', 'Chest + Back A', 'mon_chest_press', 'Machine Chest Press'], ['Tuesday', 'Chest + Back A', 'mon_pulldown', 'Lat Pulldown'],
+    ['Wednesday', 'Legs A + Core', 'tue_legpress', 'Leg Press'], ['Friday', 'Chest + Back B', 'thu_row', 'Seated Cable Row'],
+    ['Monday', 'Legs B + Core', 'fri_goblet', 'Goblet Squat'], ['Monday', 'Legs B + Core', 'fri_hip', 'Hip Thrust']].forEach(row => planTab.cells.push(row));
+  planTab.maxColumns = 4;
+  server.sheets.set('PLAN', planTab);
+  const start = new server.Sheet('START HERE', ['THE HYBRID — WORKOUT TRACKER', '4 weeks']);
+  [['PLAN', 'Monday–Friday programme'], ['TUESDAY', 'Chest + Back A'], ['WEDNESDAY', 'Legs A + Core'], ['THURSDAY', 'Shoulders + Arms'],
+    ['FRIDAY', 'Chest + Back B'], ['MONDAY', 'Legs B + Core'], ['WEEK 1', 'Listed sets'], ['START DATE', 'Tuesday 20 October 2026'],
+    ['WEEK 1 CYCLE', 'Tue 20, Wed 21, Thu 22, Fri 23, Mon 26 October 2026']].forEach(row => start.cells.push(row));
+  server.sheets.set('START HERE', start);
+  server.add('cardio', cardioRecord({ id: 'late', date: '2026-10-23', day: 'Friday' }));
+  server.add('cardio', cardioRecord({ id: 'early' }));
+  assert.throws(() => server.request({ path: '/api/organise' }), /not supported/i);
+
+  assert.deepEqual(copy(server.request({ path: '/api/organise', method: 'POST' })), { ok: true, organised: true });
+  assert.deepEqual(planTab.cells.slice(1).map(row => row[2]), ['fri_goblet', 'fri_hip', 'mon_chest_press', 'mon_pulldown', 'tue_legpress', 'thu_row']);
+  assert.equal(planTab.maxColumns, 4, 'the temporary column is removed');
+  assert.equal(planTab.getLastColumn(), 4);
+  assert.deepEqual(start.cells.slice(2, 7), [['MONDAY', 'Legs B + Core'], ['TUESDAY', 'Chest + Back A'], ['WEDNESDAY', 'Legs A + Core'], ['THURSDAY', 'Shoulders + Arms'], ['FRIDAY', 'Chest + Back B']]);
+  assert.deepEqual(start.cells[7], ['WEEK 1', 'Listed sets']);
+  assert.deepEqual(start.cells[9], ['WEEK 1 DATES', 'Mon 19 Oct (before start), Tue 20 Oct, Wed 21 Oct, Thu 22 Oct, Fri 23 Oct 2026']);
+  assert.deepEqual(server.records().cardio.map(row => row.id), ['early', 'late']);
+  const trend = server.sheets.get('Weight Trend');
+  assert.equal(trend.charts.length, 1);
+  assert.equal(trend.charts[0].type, 'line');
+  assert.equal(trend.charts[0].headers, 1);
+  assert.equal(server.state.held, false);
+
+  const before = server.mutations.length;
+  server.request({ path: '/api/organise', method: 'POST' });
+  assert.equal(trend.charts.length, 1, 'running again adds no second chart');
+  assert.ok(server.mutations.slice(before).every(mutation => mutation.tab === 'Weight Trend'), 'an organised workbook only has its trend refreshed');
 });

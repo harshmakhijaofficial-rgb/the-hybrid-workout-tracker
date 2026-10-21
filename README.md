@@ -1,6 +1,6 @@
 # THE HYBRID — Gym Command Centre
 
-A responsive workout dashboard for the Bear × Mentzer × Arnold programme, with a Tuesday–Monday training cycle and weekend recovery. Log sets and cardio, see exercise progress, and keep a daily recovery journal.
+A responsive workout dashboard for the Bear × Mentzer × Arnold programme, with Monday–Friday lifting and weekend recovery. Log sets and cardio, see exercise progress and your body weight trend, and keep a daily recovery journal.
 
 The Google Sheets edition runs as a private Apps Script web app and saves directly to the linked workout workbook. It uses Google sign-in and needs no JSON file transfers.
 
@@ -62,7 +62,7 @@ Open the link above in a modern browser. No installation or account is required.
 
 - **Overview:** this week's completed sets, lifting days, cardio minutes and volume.
 - **Training log:** save weight, reps, reps in reserve, completed sets and exercise notes; add extra sets; record cardio.
-- **Progress:** exercise charts, best weights and recent completed sets.
+- **Progress:** body weight trend, exercise charts, best weights and recent completed sets.
 - **Daily journal:** body weight, sleep, energy, duration, recovery notes and freeform entries, including weekends.
 - **Backup & data:** export and restore JSON backups.
 
@@ -84,7 +84,9 @@ npm run build:sheets
 
 This writes ignored `apps-script/build/Code.gs`, `Index.html` and `appsscript.json`. Copy each complete file into its matching Apps Script editor file. The build embeds the current programme and UI, so rerun it after source changes. Save and update the private web app deployment to publish those changes. The manifest explicitly declares owner-only access and the Google Sheets scope. Keep that access setting private.
 
-Existing workbook headers are validated before writes. Saving updates one record's schema columns; other rows, extra columns, formatting and reference tabs remain intact. IDs must remain stable; manual rows need a unique ID and the original headers. There is a 4,999-record limit per data tab. The connected edition uses Sheets as its source of truth and requires an internet connection; manual workbook changes appear after refresh. Simultaneous edits to the same record use the last completed save.
+Existing workbook headers are validated before writes. Saving updates one record's schema columns; extra columns, formatting and reference tabs remain intact. If a save lands out of date order, that tab is re-sorted by date: whole rows move together, so extra columns stay with their record, same-day rows keep their order and cleared rows sink to the bottom. IDs must remain stable;
+
+**Organise workbook** on the dashboard's Google Sheets page puts the PLAN and START HERE tabs in Monday-to-Sunday order, sorts the log tabs by date, and creates a **Weight Trend** tab with each day's check-in weight, its 7-day average and a line chart. Check-in saves keep that tab current. It changes no records and is safe to run again; run it once after updating the Apps Script files. manual rows need a unique ID and the original headers. There is a 4,999-record limit per data tab. The connected edition uses Sheets as its source of truth and requires an internet connection; manual workbook changes appear after refresh. Simultaneous edits to the same record use the last completed save.
 
 ## Run the Python edition
 
@@ -146,18 +148,20 @@ Sync pushes local changes and pulls manual Sheet edits. Keep the tab headers and
 
 ## Programme and logging conventions
 
-| Day | First cycle | Focus | Cardio target |
+| Day | Week 1 | Focus | Cardio target |
 | --- | --- | --- | --- |
+| Monday | 19 October 2026 (before the start date) | Legs B + Core | 10 minutes easy |
 | Tuesday | 20 October 2026 | Chest + Back A | 15 minutes |
 | Wednesday | 21 October 2026 | Legs A + Core | 10 minutes easy |
 | Thursday | 22 October 2026 | Shoulders + Arms | 25 minutes |
 | Friday | 23 October 2026 | Chest + Back B | 20 minutes |
-| Monday | 26 October 2026 | Legs B + Core | 10 minutes easy |
 | Saturday & Sunday | 24–25 October 2026 | Rest and recovery | — |
 
-The four-week programme starts on Tuesday, 20 October 2026, using the date in `htdocs/plan.json`. Each training week runs Tuesday–Monday: Week 1 ends on Monday, 26 October, and Week 2 begins on Tuesday, 27 October. The same weekday split repeats each week. Saturday and Sunday show recovery with the next workout on Monday. Dates after the programme show Week 4. Change the start date for a new cycle. Use full planned sets only when recovery permits. Track reps in reserve; reduce sets when needed.
+The four-week programme starts on Tuesday, 20 October 2026, using the date in `htdocs/plan.json`. Each training week runs Monday–Sunday, and Week 1 is the week containing the start date: it ends on Sunday, 25 October, and Week 2 begins with Legs B on Monday, 26 October. The Overview marks a Monday before the start date as not yet started. The same weekday split repeats each week. Saturday and Sunday show recovery with the next workout on Monday. Dates after the programme show Week 4. Change the start date for a new cycle. Use full planned sets only when recovery permits. Track reps in reserve; reduce sets when needed.
 
 Exercise IDs are stable when the schedule changes, so existing saved sets, progress history and JSON backups continue to work.
+
+The body weight trend on Progress and Daily journal uses the body weight from each daily check-in. Each dot is one day's weigh-in; the line is the average of the weigh-ins from the 7 calendar days ending on that day, which smooths day-to-day water swings. Weigh in at the same time each day, ideally in the morning, for the cleanest trend.
 
 For planks, enter seconds in Reps and 0 kg. For split squats, enter reps per leg. Bodyweight movements can use 0 kg. Volume is the raw sum of kg × reps.
 
