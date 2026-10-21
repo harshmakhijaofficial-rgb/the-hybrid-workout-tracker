@@ -1,0 +1,31 @@
+name: Remove Plety from the FTP site
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/remove-plety.yml, scripts/remove-plety.py]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  remove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: ftp-production
+    concurrency:
+      group: ftp-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Delete the plety folder from the webroot
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_PROTOCOL: ${{ vars.FTP_PROTOCOL || 'ftps' }}
+          FTP_SERVER_DIR: ${{ vars.FTP_SERVER_DIR }}
+          FTP_WEBSITE_URL: https://cleaninglondon.online/
+        run: python scripts/remove-plety.py
