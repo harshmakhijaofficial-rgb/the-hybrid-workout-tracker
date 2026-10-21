@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const root = path.resolve(fileURLToPath(new URL('../docs/', import.meta.url)));
+const root = path.resolve(fileURLToPath(new URL('../htdocs/', import.meta.url)));
 const port = Number(process.env.PORT || 8788);
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json' };
 createServer(async (req, res) => {
@@ -18,4 +18,4 @@ createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': (types[path.extname(file)] || 'application/octet-stream') + '; charset=utf-8', 'Cache-Control': 'no-store' });
     res.end(data);
   } catch { res.writeHead(404).end('Not found'); }
-}).listen(port, '127.0.0.1', () => console.log(`Dashboard preview: http://127.0.0.1:${port}/the-hybrid-workout-tracker/`));
+}).listen(port, '127.0.0.1', () => console.log(`FTP webroot preview: http://127.0.0.1:${port}/\nProject path preview: http://127.0.0.1:${port}/the-hybrid-workout-tracker/`));

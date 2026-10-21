@@ -3,13 +3,13 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
 
-const scheduleSource = await readFile(new URL('../public/schedule.js', import.meta.url), 'utf8');
-const appSource = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
-const indexSource = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
-const plan = JSON.parse(await readFile(new URL('../plan.json', import.meta.url), 'utf8'));
+const scheduleSource = await readFile(new URL('../htdocs/schedule.js', import.meta.url), 'utf8');
+const appSource = await readFile(new URL('../htdocs/app.js', import.meta.url), 'utf8');
+const indexSource = await readFile(new URL('../htdocs/index.html', import.meta.url), 'utf8');
+const plan = JSON.parse(await readFile(new URL('../htdocs/plan.json', import.meta.url), 'utf8'));
 const copy = value => JSON.parse(JSON.stringify(value));
 const window = {};
-vm.runInNewContext(scheduleSource, { window }, { filename: 'public/schedule.js' });
+vm.runInNewContext(scheduleSource, { window }, { filename: 'htdocs/schedule.js' });
 const schedule = window.HybridSchedule;
 const cycleOne = ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23', '2026-10-26'];
 const cycleTwo = ['2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-11-02'];
@@ -118,8 +118,8 @@ async function createApp(today, hash = '#train', records = { sets: [], cardio: [
     addEventListener() {}, scrollTo() {}
   };
   const context = vm.createContext({ window: browserWindow, document, localStorage, location: { hash }, Date: FixedDate, setTimeout, clearTimeout, console });
-  vm.runInContext(scheduleSource, context, { filename: 'public/schedule.js' });
-  vm.runInContext(appSource, context, { filename: 'public/app.js' });
+  vm.runInContext(scheduleSource, context, { filename: 'htdocs/schedule.js' });
+  vm.runInContext(appSource, context, { filename: 'htdocs/app.js' });
   await new Promise(resolve => setImmediate(resolve));
   const html = () => nodes.get('#view')?.innerHTML ?? '';
   assert.doesNotMatch(html(), /could not load|cannot reach|could not start/i);

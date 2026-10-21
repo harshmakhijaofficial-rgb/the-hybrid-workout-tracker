@@ -6,13 +6,13 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const output = path.join(root, 'apps-script/build');
 await mkdir(output, { recursive: true });
 const read = file => readFile(path.join(root, file), 'utf8');
-const plan = JSON.parse(await read('plan.json'));
-let html = await read('public/index.html');
-const style = await read('public/style.css');
+const plan = JSON.parse(await read('htdocs/plan.json'));
+let html = await read('htdocs/index.html');
+const style = await read('htdocs/style.css');
 html = html.replace('<link rel="stylesheet" href="./style.css">', `<style>${style}</style>`);
 const scriptFiles = [...html.matchAll(/<script defer src="\.\/([^"]+)"><\/script>/g)].map(match => match[1]);
 for (const file of scriptFiles) {
-  const source = file === 'runtime-config.js' ? "window.HYBRID_STORAGE_MODE = 'sheets';" : await read('public/' + file);
+  const source = file === 'runtime-config.js' ? "window.HYBRID_STORAGE_MODE = 'sheets';" : await read('htdocs/' + file);
   html = html.replace(`<script defer src="./${file}"></script>`, `<script>${source.replace(/<\/script/gi, '<\\/script')}</script>`);
 }
 // Inline application scripts run after the document exists; Apps Script supplies google.script.run.

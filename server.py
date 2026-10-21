@@ -20,11 +20,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+WEBROOT = ROOT / 'htdocs'
 DATA = Path(os.environ.get('HYBRID_DATA_DIR', str(ROOT / 'data'))).resolve()
 DATA.mkdir(parents=True, exist_ok=True)
 DB = DATA / 'workouts.sqlite3'
 CONFIG = json.loads((ROOT / 'config.json').read_text(encoding='utf-8'))
-PLAN = json.loads((ROOT / 'plan.json').read_text(encoding='utf-8'))
+PLAN = json.loads((WEBROOT / 'plan.json').read_text(encoding='utf-8'))
 SPREADSHEET_ID = str(CONFIG.get('spreadsheet_id') or '').strip()
 SHEET_URL = f'https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit' if SPREADSHEET_ID else ''
 LOCK = threading.RLock()
@@ -393,11 +394,13 @@ class Handler(BaseHTTPRequestHandler):
                 data=json.dumps({'version':1,'exported_at':utc(),'records':state()['records']},ensure_ascii=False,indent=2).encode('utf-8')
                 self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Content-Disposition','attachment; filename="hybrid-workout-backup.json"');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
             files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js',
-                   '/runtime-config.js':'runtime-config.js','/storage.js':'storage.js','/schedule.js':'schedule.js'}
+                   '/runtime-config.js':'runtime-config.js','/storage.js':'storage.js','/schedule.js':'schedule.js',
+                   '/plan.json':'plan.json'}
             if path not in files:return self.json({'error':'Not found'},404)
-            fp=ROOT/'public'/files[path]
-            payload=fp.read_bytes()
-            mime='text/html; charset=utf-8' if path in ('/','/index.html') else ('text/css; charset=utf-8' if path.endswith('.css') else 'application/javascript; charset=utf-8')
+            # FTP deployments use browser storage by default. The local Python
+            # server supplies its own mode without changing the uploaded files.
+            payload=b"window.HYBRID_STORAGE_MODE = 'server';\n" if path=='/runtime-config.js' else (WEBROOT/files[path]).read_bytes()
+            mime='text/html; charset=utf-8' if path in ('/','/index.html') else ('text/css; charset=utf-8' if path.endswith('.css') else ('application/json; charset=utf-8' if path.endswith('.json') else 'application/javascript; charset=utf-8'))
             self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Cache-Control','no-cache');self.send_header('Content-Length',str(len(payload)));self.end_headers();self.wfile.write(payload)
         except Exception as exc:
             logging.exception('GET failed');self.json({'error':str(exc)},500)

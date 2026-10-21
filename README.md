@@ -8,6 +8,42 @@ The Google Sheets edition runs as a private Apps Script web app and saves direct
 
 **[Open the live dashboard](https://harshmakhijaofficial-rgb.github.io/the-hybrid-workout-tracker/)**
 
+## Upload to an FTP website
+
+`htdocs/` is the complete website and the single frontend source folder. It is ready to upload; your host does not need Node.js, Python, a database or a build command.
+
+1. Open your host's `htdocs` document root in your FTP client. Some hosts call it `public_html` or `www`.
+2. Upload **the contents of this repository's `htdocs/` folder** into that document root. Your host should have `htdocs/index.html`, not `htdocs/htdocs/index.html`.
+3. Open your domain over HTTPS. The dashboard also works in a subfolder, such as `https://example.com/workouts/`.
+
+Upload these files together whenever the website changes:
+
+```text
+htdocs/
+  index.html
+  app.js
+  style.css
+  storage.js
+  schedule.js
+  runtime-config.js
+  plan.json
+  .nojekyll
+```
+
+Only this folder belongs in the public document root. Keep Python files, `apps-script/`, credentials, local workout data, tests and `.git/` outside it. `.nojekyll` supports GitHub Pages and is harmless on FTP hosts.
+
+The FTP website saves entries in that browser on that website's domain. Existing entries from GitHub Pages do not automatically move to a new domain. For saves directly to your spreadsheet and access across devices, use **Open connected dashboard** and sign in with the workbook owner's Google account. That private edition continues to run on Google Apps Script; uploading to FTP does not move its backend.
+
+After editing the website or connection metadata, run `npm run build` to validate the files and refresh the browser runtime configuration before uploading. To make an FTP ZIP on Windows:
+
+```powershell
+npm run build
+New-Item -ItemType Directory -Path dist -Force
+Compress-Archive -LiteralPath htdocs -DestinationPath dist/THE_HYBRID_FTP.zip -Force
+```
+
+Extract the ZIP, then upload the files inside its `htdocs/` folder.
+
 ## Use the hosted dashboard
 
 Open the link above in a modern browser. No installation or account is required.
@@ -54,7 +90,7 @@ Open **http://127.0.0.1:8787** while the server is running. Data is saved in `da
 python server.py --port 8788
 ```
 
-Opening `public/index.html` directly is not sufficient. Use the Python server, or build and preview the browser edition.
+Use the Python server for local SQLite storage. It serves the same `htdocs/` assets and selects server storage dynamically; the FTP files keep their browser storage configuration.
 
 ## Build and preview the browser edition
 
@@ -65,9 +101,9 @@ npm run build
 npm run preview
 ```
 
-Open **http://127.0.0.1:8788/the-hybrid-workout-tracker/**. The build copies the frontend and programme into `docs/` and selects browser storage. Relative asset URLs support a GitHub Pages project path.
+Open **http://127.0.0.1:8788/**. You can also preview **http://127.0.0.1:8788/the-hybrid-workout-tracker/** to check a subfolder deployment. The build validates `htdocs/` and refreshes its browser runtime configuration. Relative asset URLs support both FTP document roots and GitHub Pages project paths. Use an HTTP preview instead of opening `index.html` as a local file.
 
-GitHub Pages publishes `main` → `/docs`. After editing `public/` or `plan.json`, run `npm run build` and commit the updated source and `docs/` together. GitHub Actions checks the browser storage tests, Python tests and generated assets on pushes and pull requests.
+GitHub Actions tests the app and publishes `htdocs/` to GitHub Pages on successful pushes to `main`. After editing `htdocs/` or `apps-script/connection.json`, run `npm run build` and commit the changes. Pull requests run the same checks without publishing. There is no separate `public/` or generated `docs/` copy to maintain.
 
 ## Optional Google Sheets sync (Python edition)
 
@@ -107,7 +143,7 @@ Sync pushes local changes and pulls manual Sheet edits. Keep the tab headers and
 | Monday | 26 October 2026 | Legs B + Core | 10 minutes easy |
 | Saturday & Sunday | 24–25 October 2026 | Rest and recovery | — |
 
-The four-week programme starts on Tuesday, 20 October 2026, using the date in `plan.json`. Each training week runs Tuesday–Monday: Week 1 ends on Monday, 26 October, and Week 2 begins on Tuesday, 27 October. The same weekday split repeats each week. Saturday and Sunday show recovery with the next workout on Monday. Dates after the programme show Week 4. Change the start date for a new cycle. Use full planned sets only when recovery permits. Track reps in reserve; reduce sets when needed.
+The four-week programme starts on Tuesday, 20 October 2026, using the date in `htdocs/plan.json`. Each training week runs Tuesday–Monday: Week 1 ends on Monday, 26 October, and Week 2 begins on Tuesday, 27 October. The same weekday split repeats each week. Saturday and Sunday show recovery with the next workout on Monday. Dates after the programme show Week 4. Change the start date for a new cycle. Use full planned sets only when recovery permits. Track reps in reserve; reduce sets when needed.
 
 Exercise IDs are stable when the schedule changes, so existing saved sets, progress history and JSON backups continue to work.
 
@@ -125,12 +161,12 @@ Browser storage tests cover persistence, validation, backups and failed writes. 
 
 ## Source layout
 
-- `public/` — shared frontend; Python runtime uses server storage.
-- `public/storage.js` — browser storage API and backup validation.
-- `docs/` — generated browser dashboard, published by GitHub Pages.
+- `htdocs/` — complete FTP website and shared frontend, also published by GitHub Pages.
+- `htdocs/storage.js` — browser storage API and backup validation.
+- `htdocs/plan.json` — workout programme.
 - `server.py` — Python HTTP server, SQLite and Google sync.
 - `connect_google.py` — optional local Google OAuth setup.
-- `plan.json` — workout programme.
 - `scripts/` — dependency-free build and preview commands.
 - `apps-script/` — private connected dashboard backend, deployment manifest and connection metadata.
 - `tests/`, `test_app.py` — browser storage and Python checks.
+- `dist/` — ignored FTP ZIP exports.

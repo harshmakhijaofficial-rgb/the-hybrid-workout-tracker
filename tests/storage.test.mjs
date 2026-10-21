@@ -3,8 +3,8 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
 
-const source = await readFile(new URL('../public/storage.js', import.meta.url), 'utf8');
-const plan = JSON.parse(await readFile(new URL('../plan.json', import.meta.url), 'utf8'));
+const source = await readFile(new URL('../htdocs/storage.js', import.meta.url), 'utf8');
+const plan = JSON.parse(await readFile(new URL('../htdocs/plan.json', import.meta.url), 'utf8'));
 const key = 'the-hybrid-workouts-v1';
 const copy = value => JSON.parse(JSON.stringify(value));
 const emptyRecords = () => ({ sets: [], cardio: [], notes: [], checkins: [] });
@@ -38,7 +38,7 @@ function loadBrowser(storage = fakeStorage(), fetchPlan) {
     fetched.push(path);
     return fetchPlan ? fetchPlan(path) : { ok: true, json: async () => copy(plan) };
   };
-  vm.runInNewContext(source, { window, fetch }, { filename: 'public/storage.js' });
+  vm.runInNewContext(source, { window, fetch }, { filename: 'htdocs/storage.js' });
   return { request: window.HybridBrowserStorage.request, storage, fetched };
 }
 

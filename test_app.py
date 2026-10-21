@@ -278,12 +278,24 @@ class TrackerTests(unittest.TestCase):
                 return response.status, response.read()
 
         try:
-            for path in ['/', '/app.js', '/style.css', '/runtime-config.js', '/storage.js', '/schedule.js']:
+            asset_files = {'/': 'index.html', '/index.html': 'index.html', '/app.js': 'app.js',
+                           '/style.css': 'style.css', '/storage.js': 'storage.js',
+                           '/schedule.js': 'schedule.js', '/plan.json': 'plan.json'}
+            for path, filename in asset_files.items():
                 status, payload = request(path)
                 self.assertEqual(status, 200)
-                self.assertTrue(payload)
+                self.assertEqual(payload, (self.server.WEBROOT / filename).read_bytes())
+            static_runtime = (self.server.WEBROOT / 'runtime-config.js').read_text(encoding='utf-8')
+            self.assertRegex(static_runtime, r"""HYBRID_STORAGE_MODE\s*=\s*['"]browser['"]""")
+            status, payload = request('/runtime-config.js')
+            self.assertEqual(status, 200)
+            local_runtime = payload.decode('utf-8')
+            self.assertRegex(local_runtime, r"""HYBRID_STORAGE_MODE\s*=\s*['"]server['"]""")
+            self.assertNotRegex(local_runtime, r"""HYBRID_STORAGE_MODE\s*=\s*['"]browser['"]""")
+            # Serving the local mode must leave the FTP-ready source untouched.
+            self.assertEqual((self.server.WEBROOT / 'runtime-config.js').read_text(encoding='utf-8'), static_runtime)
             _, payload = request('/api/state')
-            self.assertIn('plan', json.loads(payload))
+            self.assertEqual(json.loads(payload)['plan'], json.loads((self.server.WEBROOT / 'plan.json').read_text(encoding='utf-8')))
             _, payload = request('/api/records/sets', self.first)
             self.assertTrue(json.loads(payload)['ok'])
             _, payload = request('/api/export')
@@ -293,8 +305,9 @@ class TrackerTests(unittest.TestCase):
             for invalid in [[], {'version': 1, 'records': {'sets': [self.first, {**self.first, 'id': 'bad', 'reps': '-1'}]}}]:
                 with self.assertRaises(urllib.error.HTTPError) as result:
                     request('/api/import', invalid)
-                self.assertEqual(result.exception.code, 400)
-                self.assertIn('error', json.loads(result.exception.read()))
+                with result.exception as error_response:
+                    self.assertEqual(error_response.code, 400)
+                    self.assertIn('error', json.loads(error_response.read()))
                 self.assertEqual(self.records(), before)
             _, payload = request('/api/import', backup)
             self.assertEqual(json.loads(payload)['imported']['sets'], 1)

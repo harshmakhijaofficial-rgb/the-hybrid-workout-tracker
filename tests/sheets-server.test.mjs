@@ -4,7 +4,7 @@ import test from 'node:test';
 import vm from 'node:vm';
 
 const source = await readFile(new URL('../apps-script/Code.gs', import.meta.url), 'utf8');
-const plan = JSON.parse(await readFile(new URL('../plan.json', import.meta.url), 'utf8'));
+const plan = JSON.parse(await readFile(new URL('../htdocs/plan.json', import.meta.url), 'utf8'));
 const workbookId = '17VglmaSdddJHB_tSFtQir2CiUSEiWJ9yfkavgTJRNOk';
 const fields = {
   sets: ['id', 'date', 'day', 'exercise_id', 'exercise', 'set_number', 'weight_kg', 'reps', 'rir', 'completed', 'note', 'updated_at'],

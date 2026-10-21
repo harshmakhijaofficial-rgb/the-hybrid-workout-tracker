@@ -3,9 +3,9 @@ import {readFile} from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
 
-const appSource = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
-const scheduleSource = await readFile(new URL('../public/schedule.js', import.meta.url), 'utf8');
-const plan = JSON.parse(await readFile(new URL('../plan.json', import.meta.url), 'utf8'));
+const appSource = await readFile(new URL('../htdocs/app.js', import.meta.url), 'utf8');
+const scheduleSource = await readFile(new URL('../htdocs/schedule.js', import.meta.url), 'utf8');
+const plan = JSON.parse(await readFile(new URL('../htdocs/plan.json', import.meta.url), 'utf8'));
 const copy = value => JSON.parse(JSON.stringify(value));
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const empty = () => ({sets: [], cardio: [], notes: [], checkins: []});
@@ -57,8 +57,8 @@ function dashboard({rpc = true} = {}) {
     FormData: class {constructor(form) {this.form = form;} entries() {return this.form.values[Symbol.iterator]();}},
     fetch() {blocked.fetch++; throw Error('Unexpected fetch');},
     setTimeout: () => 0, clearTimeout() {}, confirm: () => true});
-  vm.runInContext(scheduleSource, context, {filename: 'public/schedule.js'});
-  vm.runInContext(appSource, context, {filename: 'public/app.js'});
+  vm.runInContext(scheduleSource, context, {filename: 'htdocs/schedule.js'});
+  vm.runInContext(appSource, context, {filename: 'htdocs/app.js'});
   return {
     context, elements, requests, blocked, action,
     evaluate: expression => vm.runInContext(expression, context),
