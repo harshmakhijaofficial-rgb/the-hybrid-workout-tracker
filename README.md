@@ -6,7 +6,19 @@ The Google Sheets edition runs as a private Apps Script web app and saves direct
 
 **[Open the connected Google Sheets dashboard](https://script.google.com/macros/s/AKfycbwoN4h_vKgSakOoKM4dlFNF_rhZi-D_XGD405OIczFn9rua59I3v24F2LNu8qQhwqPX/exec)** — sign in as the workbook owner.
 
-**[Open the live dashboard](https://harshmakhijaofficial-rgb.github.io/the-hybrid-workout-tracker/)**
+**[Open the website](https://cleaninglondon.online/)** · [GitHub Pages mirror](https://harshmakhijaofficial-rgb.github.io/the-hybrid-workout-tracker/)
+
+## Deploy from GitHub to FTP
+
+Successful pushes to `main` publish the tested `htdocs/` website to **https://cleaninglondon.online/** and the GitHub Pages mirror. The FTP credentials are stored in repository Actions secrets named `FTP_SERVER`, `FTP_USERNAME` and `FTP_PASSWORD`. Keep their values out of source files.
+
+The FTP job checks the existing document root before uploading. It prefers `cleaninglondon.online/htdocs/`, then `htdocs/`, relative to the account's login directory. If the account already opens in `htdocs` or `public_html`, it uses that directory. For another layout, set the repository Actions variable `FTP_SERVER_DIR` to the existing document root, including a trailing slash. The preflight never creates a missing destination directory.
+
+FTPS with certificate verification is the default. For a host that supports only FTP, set the Actions variable `FTP_PROTOCOL` to `ftp`. You can also select the protocol when running **Check and publish tracker → Run workflow** manually on `main`. A failed connection stops deployment.
+
+Only the website files are uploaded. A separate `.hybrid-workout-tracker-ftp-state.json` tracks this app's deployed files; unrelated files on the host are preserved. Deployment runs after the tests pass, and an HTTPS check confirms that the live dashboard and assets match this commit.
+
+This publishes the static dashboard. The private spreadsheet backend remains on Google Apps Script and opens through **Open connected dashboard**.
 
 ## Upload to an FTP website
 
@@ -103,7 +115,7 @@ npm run preview
 
 Open **http://127.0.0.1:8788/**. You can also preview **http://127.0.0.1:8788/the-hybrid-workout-tracker/** to check a subfolder deployment. The build validates `htdocs/` and refreshes its browser runtime configuration. Relative asset URLs support both FTP document roots and GitHub Pages project paths. Use an HTTP preview instead of opening `index.html` as a local file.
 
-GitHub Actions tests the app and publishes `htdocs/` to GitHub Pages on successful pushes to `main`. After editing `htdocs/` or `apps-script/connection.json`, run `npm run build` and commit the changes. Pull requests run the same checks without publishing. There is no separate `public/` or generated `docs/` copy to maintain.
+GitHub Actions tests the app and publishes `htdocs/` to FTP and GitHub Pages on successful pushes to `main`. After editing `htdocs/` or `apps-script/connection.json`, run `npm run build` and commit the changes. Pull requests run the same checks without publishing. There is no separate `public/` or generated `docs/` copy to maintain.
 
 ## Optional Google Sheets sync (Python edition)
 
