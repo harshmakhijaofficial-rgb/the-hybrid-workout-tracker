@@ -84,7 +84,9 @@ npm run build:sheets
 
 This writes ignored `apps-script/build/Code.gs`, `Index.html` and `appsscript.json`. Copy each complete file into its matching Apps Script editor file. The build embeds the current programme and UI, so rerun it after source changes. Save and update the private web app deployment to publish those changes. The manifest explicitly declares owner-only access and the Google Sheets scope. Keep that access setting private.
 
-Existing workbook headers are validated before writes. Saving updates one record's schema columns; other rows, extra columns, formatting and reference tabs remain intact. IDs must remain stable; manual rows need a unique ID and the original headers. There is a 4,999-record limit per data tab. The connected edition uses Sheets as its source of truth and requires an internet connection; manual workbook changes appear after refresh. Simultaneous edits to the same record use the last completed save.
+Existing workbook headers are validated before writes. Saving updates one record's schema columns; extra columns, formatting and reference tabs remain intact. If a save lands out of date order, that tab is re-sorted by date: whole rows move together, so extra columns stay with their record, same-day rows keep their order and cleared rows sink to the bottom. IDs must remain stable;
+
+**Organise workbook** on the dashboard's Google Sheets page puts the PLAN and START HERE tabs in Monday-to-Sunday order, sorts the log tabs by date, and creates a **Weight Trend** tab with each day's check-in weight, its 7-day average and a line chart. Check-in saves keep that tab current. It changes no records and is safe to run again; run it once after updating the Apps Script files. manual rows need a unique ID and the original headers. There is a 4,999-record limit per data tab. The connected edition uses Sheets as its source of truth and requires an internet connection; manual workbook changes appear after refresh. Simultaneous edits to the same record use the last completed save.
 
 ## Run the Python edition
 

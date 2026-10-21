@@ -28,9 +28,10 @@ function hybridRequest(request) {
   const stateRequest = path === '/api/state' && method === 'GET';
   const exportRequest = path === '/api/export' && method === 'GET';
   const refreshRequest = path === '/api/sync' && method === 'POST';
+  const organiseRequest = path === '/api/organise' && method === 'POST';
   const saveRequest = match && method === 'POST' && !match[2];
   const deleteRequest = match && match[1] === 'notes' && method === 'DELETE' && match[2];
-  if (!stateRequest && !exportRequest && !refreshRequest && !saveRequest && !deleteRequest) throw Error('This dashboard action is not supported.');
+  if (!stateRequest && !exportRequest && !refreshRequest && !organiseRequest && !saveRequest && !deleteRequest) throw Error('This dashboard action is not supported.');
   const plan = hybridPlan_();
   let item, deleteId;
   if (saveRequest) {
@@ -56,6 +57,11 @@ function hybridRequest(request) {
     if (stateRequest) return {plan: JSON.parse(JSON.stringify(plan)), records: hybridRecords_(tables), connected: true, sheet_url: hybridSheetUrl_(), last_sync: now, offline: false, storage_mode: 'sheets'};
     if (exportRequest) return {version: 1, exported_at: now, records: hybridRecords_(tables)};
     if (refreshRequest) return {ok: true, last_sync: now, pulled: 0, pushed: 0, deleted: 0, conflicts: 0};
+    if (organiseRequest) {
+      changed = true;
+      hybridOrganise_(book, plan, tables);
+      return {ok: true, organised: true};
+    }
     const kind = match[1], table = tables[kind];
     if (saveRequest) {
       const found = table.entries.find(entry => entry.record.id === item.id);
@@ -70,6 +76,8 @@ function hybridRequest(request) {
       const values = table.fields.map(field => hybridLiteral_(item[field]));
       changed = true;
       table.sheet.getRange(row, 1, 1, table.fields.length).setValues([values]);
+      hybridSortLog_(table, {row: row, date: item.date});
+      if (kind === 'checkins') hybridWriteWeightTrend_(book, table.entries.map(entry => entry.record).filter(record => record.id !== item.id).concat([item]), false);
       return {ok: true, record: item};
     }
     const found = table.entries.find(entry => entry.record.id === deleteId);
@@ -82,6 +90,122 @@ function hybridRequest(request) {
   } finally {
     try { if (changed) SpreadsheetApp.flush(); }
     finally { lock.releaseLock(); }
+  }
+}
+
+/** Orders PLAN and START HERE Monday to Sunday, sorts the log tabs by date and creates the Weight Trend tab and chart. */
+function hybridOrganise_(book, plan, tables) {
+  hybridOrderPlanTab_(book);
+  hybridOrderStartHere_(book, plan);
+  Object.keys(tables).forEach(kind => hybridSortLog_(tables[kind], null));
+  hybridWriteWeightTrend_(book, hybridRecords_(tables).checkins, true);
+}
+
+const HYBRID_WEEKDAYS_ = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const HYBRID_TREND_TAB_ = 'Weight Trend';
+function hybridDayNumber_(iso) { return Math.floor(Date.parse(iso + 'T00:00:00Z') / 86400000); }
+
+/** Sorts rows 2+ by numeric keys through a temporary column, so whole rows move with their formatting and ties keep their order. */
+function hybridSortRows_(sheet, keys) {
+  const width = sheet.getLastColumn(), added = sheet.getMaxColumns() <= width;
+  if (added) sheet.insertColumnAfter(width);
+  const keyRange = sheet.getRange(2, width + 1, keys.length, 1);
+  keyRange.setValues(keys.map((key, index) => [key * 10000 + index]));
+  sheet.getRange(2, 1, keys.length, width + 1).sort({column: width + 1, ascending: true});
+  if (added) sheet.deleteColumn(width + 1);
+  else keyRange.clearContent();
+}
+
+/** Keeps a log tab in date order. Cleared rows sink to the bottom. Sorts only when a row is out of place. */
+function hybridSortLog_(table, written) {
+  const last = Math.max(table.sheet.getLastRow(), written ? written.row : 0);
+  if (last < 3) return false;
+  const dates = {};
+  table.entries.forEach(entry => { dates[entry.row] = entry.record.date; });
+  if (written) dates[written.row] = written.date;
+  const keys = [];
+  for (let row = 2; row <= last; row++) keys.push(dates[row] ? hybridDayNumber_(dates[row]) : 1e6);
+  if (keys.every((key, index) => index === 0 || key >= keys[index - 1])) return false;
+  hybridSortRows_(table.sheet, keys);
+  return true;
+}
+
+/** Reorders PLAN rows Monday to Sunday, keeping each day's exercises in their listed order. */
+function hybridOrderPlanTab_(book) {
+  const sheet = book.getSheetByName('PLAN');
+  if (!sheet || sheet.getLastRow() < 3) return;
+  const keys = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().map(row => HYBRID_WEEKDAYS_.indexOf(String(row[0]).trim()));
+  // An unexpected layout is left untouched rather than guessed at.
+  if (keys.some(key => key < 0) || keys.every((key, index) => index === 0 || key >= keys[index - 1])) return;
+  hybridSortRows_(sheet, keys);
+}
+
+/** Puts the START HERE weekday rows in Monday-to-Sunday order and lists the dates of Week 1. */
+function hybridOrderStartHere_(book, plan) {
+  const sheet = book.getSheetByName('START HERE');
+  if (!sheet || sheet.getLastRow() < 1) return;
+  const values = sheet.getRange(1, 1, sheet.getLastRow(), 2).getValues();
+  const upper = HYBRID_WEEKDAYS_.map(day => day.toUpperCase());
+  const slots = [];
+  values.forEach((row, index) => { if (upper.includes(String(row[0]).trim().toUpperCase())) slots.push(index); });
+  const ordered = slots.map(index => values[index]).sort((a, b) => upper.indexOf(String(a[0]).trim().toUpperCase()) - upper.indexOf(String(b[0]).trim().toUpperCase()));
+  slots.forEach((index, n) => {
+    if (values[index] !== ordered[n]) sheet.getRange(index + 1, 1, 1, 2).setValues([[ordered[n][0], ordered[n][1]]]);
+  });
+  const weekRow = values.findIndex(row => /^WEEK 1 (CYCLE|DATES)$/i.test(String(row[0]).trim()));
+  if (weekRow < 0) return;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const start = hybridDayNumber_(plan.start_date), monday = start - ((start + 3) % 7 + 7) % 7;
+  const dates = plan.days.map(day => monday + HYBRID_WEEKDAYS_.indexOf(day.day)).sort((a, b) => a - b).map(number => {
+    const date = new Date(number * 86400000);
+    return HYBRID_WEEKDAYS_[(date.getUTCDay() + 6) % 7].slice(0, 3) + ' ' + date.getUTCDate() + ' ' + months[date.getUTCMonth()] + (number < start ? ' (before start)' : '');
+  });
+  const text = dates.join(', ') + ' ' + plan.start_date.slice(0, 4);
+  if (values[weekRow][0] !== 'WEEK 1 DATES' || values[weekRow][1] !== text) sheet.getRange(weekRow + 1, 1, 1, 2).setValues([['WEEK 1 DATES', text]]);
+}
+
+/** Daily weigh-ins with the average of the weigh-ins from the 7 calendar days ending on each date. */
+function hybridWeightRows_(checkins) {
+  const byDate = {};
+  checkins.forEach(record => {
+    const kg = Number(record.bodyweight_kg);
+    if (!record.bodyweight_kg || !(kg > 0)) return;
+    if (!byDate[record.date] || record.updated_at > byDate[record.date].updated_at) byDate[record.date] = {date: record.date, kg: kg, updated_at: record.updated_at};
+  });
+  const days = Object.keys(byDate).sort().map(date => byDate[date]);
+  return days.map(point => {
+    const from = hybridDayNumber_(point.date) - 6;
+    const window = days.filter(other => other.date <= point.date && hybridDayNumber_(other.date) >= from);
+    return [point.date, point.kg, Math.round(window.reduce((sum, other) => sum + other.kg, 0) / window.length * 100) / 100];
+  });
+}
+
+/** Rewrites the Weight Trend tab. Saves only refresh an existing tab; setup creates it and its chart. */
+function hybridWriteWeightTrend_(book, checkins, create) {
+  let sheet = book.getSheetByName(HYBRID_TREND_TAB_);
+  if (!sheet) {
+    if (!create) return;
+    sheet = book.insertSheet(HYBRID_TREND_TAB_);
+  }
+  const rows = hybridWeightRows_(checkins), previous = sheet.getLastRow();
+  sheet.getRange(1, 1, 1, 3).setValues([['Date', 'Daily weigh-in (kg)', '7-day average (kg)']]);
+  if (previous > 1) sheet.getRange(2, 1, previous - 1, 3).clearContent();
+  if (rows.length) {
+    sheet.getRange(2, 1, rows.length, 3).setValues(rows);
+    sheet.getRange(2, 1, rows.length, 1).setNumberFormat('d mmm yyyy');
+    sheet.getRange(2, 2, rows.length, 2).setNumberFormat('0.0');
+  }
+  if (create && !sheet.getCharts().length) {
+    sheet.insertChart(sheet.newChart().asLineChart()
+      .addRange(sheet.getRange(1, 1, HYBRID_MAX_ROWS_ + 1, 3))
+      .setNumHeaders(1)
+      .setPosition(2, 5, 0, 0)
+      .setOption('title', 'Body weight trend')
+      .setOption('legend', {position: 'bottom'})
+      .setOption('hAxis', {format: 'd MMM'})
+      .setOption('vAxis', {title: 'kg'})
+      .setOption('series', {0: {lineWidth: 0, pointSize: 5, color: '#93a39a'}, 1: {lineWidth: 3, color: '#7cb342'}})
+      .build());
   }
 }
 
