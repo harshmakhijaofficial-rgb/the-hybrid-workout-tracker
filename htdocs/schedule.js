@@ -13,7 +13,9 @@
   const isoFrom = day => new Date(day * DAY_MS).toISOString().slice(0, 10);
   const addDays = (iso, days) => isoFrom(ordinal(iso) + days);
   const dayFor = iso => DAYS[mod(ordinal(iso) + 4, 7)];
-  function cycleStart(plan, iso) { return isoFrom(ordinal(iso) - mod(ordinal(iso) - ordinal(plan.start_date), 7)); }
+  // Training weeks run Monday to Sunday. Day 4 (1970-01-05) was a Monday.
+  const MONDAY = 4;
+  function cycleStart(plan, iso) { return isoFrom(ordinal(iso) - mod(ordinal(iso) - MONDAY, 7)); }
   function cycleDates(plan, iso) { const start = cycleStart(plan, iso); return Array.from({length: 7}, (_, offset) => addDays(start, offset)); }
   function dateForDay(plan, iso, day) {
     if (!DAYS.includes(day)) throw Error('Unknown weekday.');
@@ -21,7 +23,8 @@
     return addDays(start, mod(DAYS.indexOf(day) - DAYS.indexOf(dayFor(start)), 7));
   }
   const weekDates = (plan, iso) => plan.days.map(day => dateForDay(plan, iso, day.day));
-  const weekOf = (plan, iso) => Math.min(4, Math.max(1, Math.floor((ordinal(iso) - ordinal(plan.start_date)) / 7) + 1));
+  // Week 1 is the Monday–Sunday week that contains the programme start date.
+  const weekOf = (plan, iso) => Math.min(4, Math.max(1, Math.floor((ordinal(iso) - ordinal(cycleStart(plan, plan.start_date))) / 7) + 1));
   const sessionFor = (plan, iso) => plan.days.find(day => day.day === dayFor(iso)) || null;
   function nextSession(plan, iso) {
     for (let offset = 0; offset < 7; offset++) {

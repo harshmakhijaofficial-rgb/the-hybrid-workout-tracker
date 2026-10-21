@@ -1,7 +1,7 @@
 {
   "name": "THE HYBRID",
   "subheading": "BEAR × HEAVY DUTY × GOLDEN ERA",
-  "description": "Four weeks of progressive hypertrophy, controlled strength and StairMaster conditioning, on a Tuesday–Monday training cycle.",
+  "description": "Four weeks of progressive hypertrophy, controlled strength and StairMaster conditioning, on a Monday–Sunday training week.",
   "start_date": "2026-10-20",
   "weeks": [
     {
@@ -26,6 +26,70 @@
     }
   ],
   "days": [
+    {
+      "day": "Monday",
+      "short": "MON",
+      "focus": "Legs B + Core",
+      "tag": "HYPERTROPHY · STABILITY",
+      "cardio_target": 10,
+      "cardio_intensity": "Easy",
+      "exercises": [
+        {
+          "id": "fri_goblet",
+          "name": "Goblet Squat",
+          "sets": 3,
+          "reps": "8–12",
+          "rest": 120,
+          "style": "Controlled",
+          "tip": "Brace and maintain balance."
+        },
+        {
+          "id": "fri_hip",
+          "name": "Hip Thrust / Glute Bridge Machine",
+          "sets": 3,
+          "reps": "10–12",
+          "rest": 90,
+          "style": "Controlled",
+          "tip": "Pause at top; avoid hyperextension."
+        },
+        {
+          "id": "fri_lyingcurl",
+          "name": "Lying Leg Curl",
+          "sets": 2,
+          "reps": "10–15",
+          "rest": 75,
+          "style": "Controlled",
+          "tip": "Lower slowly."
+        },
+        {
+          "id": "fri_extension",
+          "name": "Leg Extension",
+          "sets": 2,
+          "reps": "12–15",
+          "rest": 75,
+          "style": "Controlled",
+          "tip": "Smooth range; no snapping knee."
+        },
+        {
+          "id": "fri_seatedcalf",
+          "name": "Seated Calf Raise",
+          "sets": 2,
+          "reps": "12–20",
+          "rest": 60,
+          "style": "Controlled",
+          "tip": "Pause at peak contraction."
+        },
+        {
+          "id": "fri_crunch",
+          "name": "Cable Crunch",
+          "sets": 2,
+          "reps": "12–15",
+          "rest": 60,
+          "style": "Core",
+          "tip": "Crunch through abs rather than hips."
+        }
+      ]
+    },
     {
       "day": "Tuesday",
       "short": "TUE",
@@ -288,70 +352,6 @@
           "rest": 75,
           "style": "Controlled",
           "tip": "Pull to eye level, slow release."
-        }
-      ]
-    },
-    {
-      "day": "Monday",
-      "short": "MON",
-      "focus": "Legs B + Core",
-      "tag": "HYPERTROPHY · STABILITY",
-      "cardio_target": 10,
-      "cardio_intensity": "Easy",
-      "exercises": [
-        {
-          "id": "fri_goblet",
-          "name": "Goblet Squat",
-          "sets": 3,
-          "reps": "8–12",
-          "rest": 120,
-          "style": "Controlled",
-          "tip": "Brace and maintain balance."
-        },
-        {
-          "id": "fri_hip",
-          "name": "Hip Thrust / Glute Bridge Machine",
-          "sets": 3,
-          "reps": "10–12",
-          "rest": 90,
-          "style": "Controlled",
-          "tip": "Pause at top; avoid hyperextension."
-        },
-        {
-          "id": "fri_lyingcurl",
-          "name": "Lying Leg Curl",
-          "sets": 2,
-          "reps": "10–15",
-          "rest": 75,
-          "style": "Controlled",
-          "tip": "Lower slowly."
-        },
-        {
-          "id": "fri_extension",
-          "name": "Leg Extension",
-          "sets": 2,
-          "reps": "12–15",
-          "rest": 75,
-          "style": "Controlled",
-          "tip": "Smooth range; no snapping knee."
-        },
-        {
-          "id": "fri_seatedcalf",
-          "name": "Seated Calf Raise",
-          "sets": 2,
-          "reps": "12–20",
-          "rest": 60,
-          "style": "Controlled",
-          "tip": "Pause at peak contraction."
-        },
-        {
-          "id": "fri_crunch",
-          "name": "Cable Crunch",
-          "sets": 2,
-          "reps": "12–15",
-          "rest": 60,
-          "style": "Core",
-          "tip": "Crunch through abs rather than hips."
         }
       ]
     }
